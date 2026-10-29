@@ -7,29 +7,25 @@ set(COBERTURA_REPORT_PATH "${COVERAGE_REPORT_PATH}/cobertura.xml" CACHE PATH "Pa
 set(COVERAGE_TARGETS_FOLDER "Tests utilities/Code Coverage")
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-    find_program(OpenCPPCoverage OpenCppCoverage.exe opencppcoverage.exe REQUIRED
-        PATHS "C:/Program Files/OpenCppCoverage" "C:/Program Files (x86)/OpenCppCoverage")
-
-    cmake_path(CONVERT ${CMAKE_SOURCE_DIR} TO_NATIVE_PATH_LIST OPENCPPCOVERAGE_SOURCES)
-    set(OPENCPPCOVERAGE_COMMON_ARGS --sources=${OPENCPPCOVERAGE_SOURCES} --modules=${OPENCPPCOVERAGE_SOURCES} --excluded_sources=test*)
+    # covdbg (https://covdbg.com) reads the binaries and their PDBs; what it measures is set in .covdbg.yaml.
+    find_program(COVDBG covdbg REQUIRED)
+    set(COVDBG_DATABASE "${COVERAGE_REPORT_PATH}/test_sparrow_lib.covdb")
+    set(COVDBG_RUN_TESTS ${COVDBG} --config ${CMAKE_SOURCE_DIR}/.covdbg.yaml --propagate-exit-code
+        --output ${COVDBG_DATABASE} $<TARGET_FILE:test_sparrow_lib>)
 
     add_custom_target(generate_cobertura
-        COMMAND ${OpenCPPCoverage}
-            ${OPENCPPCOVERAGE_COMMON_ARGS}
-            --export_type=cobertura:${COBERTURA_REPORT_PATH}
-            -- $<TARGET_FILE:test_sparrow_lib>
+        COMMAND ${COVDBG_RUN_TESTS}
+        COMMAND ${COVDBG} convert --input ${COVDBG_DATABASE} --format COBERTURA --output ${COBERTURA_REPORT_PATH}
         DEPENDS test_sparrow_lib
-        COMMENT "Generating coverage cobertura report with OpenCppCoverage: ${COBERTURA_REPORT_PATH}"
+        COMMENT "Generating coverage cobertura report with covdbg: ${COBERTURA_REPORT_PATH}"
     )
     set(TARGET_PROPERTIES generate_cobertura PROPERTIES FOLDER ${COVERAGE_TARGETS_FOLDER})
 
     add_custom_target(generate_html_coverage_report
-        COMMAND ${OpenCPPCoverage}
-            ${OPENCPPCOVERAGE_COMMON_ARGS}
-            --export_type=html:${COVERAGE_REPORT_PATH}
-            -- $<TARGET_FILE:test_sparrow_lib>
+        COMMAND ${COVDBG_RUN_TESTS}
+        COMMAND ${COVDBG} convert --input ${COVDBG_DATABASE} --format HTML --output ${COVERAGE_REPORT_PATH}
         DEPENDS test_sparrow_lib
-        COMMENT "Generating coverage report with OpenCppCoverage: ${COVERAGE_REPORT_PATH}"
+        COMMENT "Generating coverage report with covdbg: ${COVERAGE_REPORT_PATH}"
     )
     set(TARGET_PROPERTIES generate_cobertura PROPERTIES FOLDER "Tests utilities/Code Coverage")
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")

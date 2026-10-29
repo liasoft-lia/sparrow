@@ -13,6 +13,9 @@ defaults:
 jobs:
   build:
     runs-on: ${{ matrix.runs-on }}
+    permissions:
+      contents: read
+      id-token: write # covdbg identifies this repository by the job's OIDC token
     name: ${{ matrix.toolchain.compiler }} / ${{ matrix.build-system.name }} / ${{ matrix.config.name }} / targets ${{ matrix.target-arch.name }} / date-polyfill ${{ matrix.toolchain.date-polyfill}} /  shared ${{ matrix.toolchain.shared }}
     strategy:
       fail-fast: false
@@ -129,10 +132,17 @@ jobs:
       run: |
         echo "SPARROW_CHECKS='$SPARROW_CHECKS -DSPARROW_ENABLE_SIZE_CHECKS=ON'" >> $GITHUB_ENV
 
+    # GitHub issues no OIDC token to pull requests from forks, so coverage is measured on
+    # pushes and on pull requests from branches of this repository.
+    - name: Set up covdbg
+      if: matrix.config.name == 'Debug' && matrix.toolchain.compiler == 'msvc' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+      uses: liasoft/setup-covdbg@6116a52a8ce697108056ce4b4cd2429424a231b1 # v1.0.0
+      with:
+        version: '1.5.1'
+
     - name: Enable tests coverage
-      if: matrix.config.name == 'Debug' && matrix.toolchain.compiler == 'msvc'
+      if: matrix.config.name == 'Debug' && matrix.toolchain.compiler == 'msvc' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
       run: |
-        choco install opencppcoverage
         echo "TEST_COVERAGE_ACTIVATION=' -DENABLE_COVERAGE=ON'" >> $GITHUB_ENV
 
     - name: Set CMake generator environment variable
@@ -195,13 +205,13 @@ jobs:
         if-no-files-found: error
 
     - name: Tests coverage
-      if: matrix.config.name == 'Debug' && matrix.toolchain.compiler == 'msvc'
+      if: matrix.config.name == 'Debug' && matrix.toolchain.compiler == 'msvc' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
       working-directory: build
       run: |
         cmake --build . --config Debug --target generate_cobertura
 
     - name: Upload coverage to Codecov
-      if: matrix.config.name == 'Debug' && matrix.toolchain.compiler == 'msvc'
+      if: matrix.config.name == 'Debug' && matrix.toolchain.compiler == 'msvc' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
       env:
         COMPILER: ${{ matrix.toolchain.compiler }}
         BUILD_SYSTEM: ${{ matrix.build-system.name }}

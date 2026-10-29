@@ -1,0 +1,15 @@
+# Windows coverage for cmake/code_coverage.cmake: the selection OpenCppCoverage used there
+# (--sources=<repo> --modules=<repo> --excluded_sources=test*), include/ and src/ measured in
+# test_sparrow_lib.exe and the sparrow DLL.
+version: 1
+source_root: "."
+coverage:
+  default:
+    files:
+      include:
+        - "include/**"
+        - "src/**"
+    modules:
+      include:
+        - "sparrowd.dll"
+        - "test_sparrow_lib.exe"
