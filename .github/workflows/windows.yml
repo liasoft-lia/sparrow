@@ -117,8 +117,12 @@ jobs:
         environment-file: environment-dev.yml
         init-shell: bash
         cache-downloads: true
+        # conda-forge's Windows builds of howardhinnant_date after 3.0.3 ship without their CMake files
+        # (conda-forge/howardhinnant_date-feedstock#23), so find_package(date) fails and the build falls back
+        # to a fetched date that aborts on Windows. Drop this pin once the feedstock is fixed.
         create-args: |
           ninja
+          howardhinnant_date<3.0.4
 
     - name: Set dependencies install prefix dir for 64bit
       if: matrix.target-arch.name == 'Win64'
