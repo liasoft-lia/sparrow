@@ -142,7 +142,7 @@ jobs:
       if: matrix.config.name == 'Debug' && matrix.toolchain.compiler == 'msvc' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
       uses: liasoft/setup-covdbg@6116a52a8ce697108056ce4b4cd2429424a231b1 # v1.0.0
       with:
-        version: '1.5.1'
+        version: 'latest'
 
     - name: Enable tests coverage
       if: matrix.config.name == 'Debug' && matrix.toolchain.compiler == 'msvc' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
