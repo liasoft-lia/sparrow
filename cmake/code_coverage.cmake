@@ -14,6 +14,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
         --output ${COVDBG_DATABASE} $<TARGET_FILE:test_sparrow_lib>)
 
     add_custom_target(generate_cobertura
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${COVERAGE_REPORT_PATH}
         COMMAND ${COVDBG_RUN_TESTS}
         COMMAND ${COVDBG} convert --input ${COVDBG_DATABASE} --format COBERTURA --output ${COBERTURA_REPORT_PATH}
         DEPENDS test_sparrow_lib
@@ -22,6 +23,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     set(TARGET_PROPERTIES generate_cobertura PROPERTIES FOLDER ${COVERAGE_TARGETS_FOLDER})
 
     add_custom_target(generate_html_coverage_report
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${COVERAGE_REPORT_PATH}
         COMMAND ${COVDBG_RUN_TESTS}
         COMMAND ${COVDBG} convert --input ${COVDBG_DATABASE} --format HTML --output ${COVERAGE_REPORT_PATH}
         DEPENDS test_sparrow_lib
