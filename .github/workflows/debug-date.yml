@@ -20,23 +20,17 @@ jobs:
           ninja
     - name: What conda installed
       run: |
-        micromamba list | grep -iE 'date|tzdata|cmake'
-        ls -la "$CONDA_PREFIX/Library/cmake" "$CONDA_PREFIX/Library/CMake" 2>&1 || true
-        for f in "$CONDA_PREFIX"/Library/cmake/*.cmake; do echo "=== $f"; cat "$f"; done 2>&1 || true
-        ls -la "$CONDA_PREFIX/Library/lib" | grep -i date || true
-        ls -la "$CONDA_PREFIX/Library/bin" | grep -i date || true
-    - name: Configure as CI, with find_package debug output
+        micromamba list | grep -iE 'date|tzdata'
+        find "$CONDA_PREFIX/Library" -iname 'date*config*.cmake' -o -iname 'dateTargets*.cmake'
+    - name: Configure, build and test as the date-polyfill ON / shared ON leg
       run: |
-        cmake -S . -B build-a -A x64 -G "Visual Studio 18 2026" \
-          -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH=$CONDA_PREFIX -DBUILD_TESTS=ON \
-          -DUSE_DATE_POLYFILL=ON -DSPARROW_BUILD_SHARED=ON -DFETCH_DEPENDENCIES_WITH_CMAKE=MISSING \
-          -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreadedDLL --debug-find-pkg=date 2>&1 | tee configure-a.log | grep -iE 'date|find_package' | head -120
-    - name: Configure with date_DIR at conda's package, build and run the tests
-      run: |
-        cmake -S . -B build-b -A x64 -G "Visual Studio 18 2026" \
-          -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH=$CONDA_PREFIX -DBUILD_TESTS=ON \
-          -DUSE_DATE_POLYFILL=ON -DSPARROW_BUILD_SHARED=ON -DFETCH_DEPENDENCIES_WITH_CMAKE=MISSING \
-          -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreadedDLL "-Ddate_DIR=$CONDA_PREFIX/Library/cmake" 2>&1 | tee configure-b.log | grep -iE 'date' || true
-        cmake --build build-b --config Debug --target test_sparrow_lib
-        cd build-b
+        cmake -S . -B build -A x64 -G "Visual Studio 18 2026" \
+          -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH=$CONDA_PREFIX -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX \
+          -DBUILD_TESTS=ON -DSPARROW_CONTRACTS_THROW_ON_FAILURE=ON -DTRACK_COPIES=ON -DENABLE_INTEGRATION_TEST=ON \
+          -DBUILD_EXAMPLES=ON -DCREATE_JSON_READER_TARGET=ON -DUSE_DATE_POLYFILL=ON \
+          -DSPARROW_ENABLE_SIZE_CHECKS=ON -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreadedDLL \
+          -DFETCH_DEPENDENCIES_WITH_CMAKE=MISSING -DSPARROW_BUILD_SHARED=ON 2>&1 | tee configure.log | grep -iE 'date'
+        cd build
+        cmake --build . --config Debug --target sparrow
+        cmake --build . --config Debug --target test_sparrow_lib
         cmake --build . --config Debug --target run_tests_with_junit_report
