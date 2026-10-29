@@ -18,7 +18,8 @@ jobs:
         cache-downloads: true
         create-args: |
           ninja
-          conda-forge::howardhinnant_date<3.0.4
+    - name: Pin howardhinnant_date below 3.0.4
+      run: micromamba install -y -n myenv -c conda-forge "howardhinnant_date<3.0.4"
     - name: What conda installed
       run: |
         micromamba list | grep -iE 'date|tzdata'
