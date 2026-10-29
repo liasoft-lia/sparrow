@@ -18,6 +18,7 @@ jobs:
         cache-downloads: true
         create-args: |
           ninja
+          conda-forge::howardhinnant_date<3.0.4
     - name: What conda installed
       run: |
         micromamba list | grep -iE 'date|tzdata'
